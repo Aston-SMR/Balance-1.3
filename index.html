@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>紅藍平衡紀錄</title>
+<style>
+* { box-sizing: border-box; }
+html, body {
+margin: 0;
+padding: 0;
+background: #070b14;
+color: #fff;
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+}
+
+body {
+padding: 6px;
+}
+
+.wrap {
+width: 100%;
+max-width: 760px;
+margin: 0 auto;
+}
+
+.title {
+text-align: center;
+font-weight: 900;
+font-size: 21px;
+margin: 4px 0 8px;
+letter-spacing: 1px;
+}
+
+.card {
+background: #131b27;
+border: 1px solid #27344c;
+border-radius: 15px;
+padding: 7px;
+margin-bottom: 8px;
+box-shadow: 0 0 0 1px rgba(80,120,200,.06), 0 10px 24px rgba(0,0,0,.25);
+}
+
+.section-title {
+font-size: 13px;
+font-weight: 800;
+color: #d8dfeb;
+margin: 1px 0 7px;
+}
+
+/* 三個點點更縮小 */
+.dots {
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 5px;
+}
+
+.dot-box {
+background: #09111f;
+border: 1px solid #253453;
+border-radius: 12px;
+padding: 5px 4px;
+text-align: center;
+}
+
+.dot-label {
+font-size: 11px;
+font-weight: 800;
+color: #d6ddeb;
+margin-bottom: 4px;
+}
+
+.dot-view {
+width: 26px;
+height: 26px;
+border-radius: 50%;
+background: #2d3748;
+border: 2px solid #41506b;
+margin: 0 auto 5px;
+}
+
+.dot-view.red {
+background: #e53935;
+border-color: #ffb0ad;
+}
+
+.dot-view.blue {
+background: #1e88e5;
+border-color: #add6ff;
+}
+
+.btn-row {
+display: flex;
+gap: 3px;
+justify-content: center;
+}
+
+button {
+border: none;
+border-radius: 9px;
+font-weight: 900;
+cursor: pointer;
+color: #fff;
+white-space: nowrap;
+-webkit-tap-highlight-color: transparent;
+}
+
+.red-btn {
+background: #e53935;
+padding: 6px 7px;
+font-size: 11px;
+}
+
+.blue-btn {
+background: #1e88e5;
+padding: 6px 7px;
+font-size: 11px;
+}
+
+.gray-btn, .orange-btn {
+padding: 7px 9px;
+font-size: 11px;
+}
+
+.gray-btn { background: #636c7b; }
+.orange-btn { background: #f59e0b; }
+
+.mini-btns {
+display: flex;
+gap: 6px;
+flex-wrap: wrap;
+margin-top: 7px;
+}
+
+.predict-grid,
+.stats-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 5px;
+}
+
+.predict-box,
+.stat-box,
+.memory-item,
+.history-item,
+.history-predict-box {
+background: #07101e;
+border: 1px solid #263453;
+border-radius: 12px;
+}
+
+.predict-box,
+.stat-box {
+padding: 7px;
+min-height: 104px;
+}
+
+.predict-box h3,
+.stat-box h3 {
+margin: 0 0 4px;
+font-size: 12px;
+font-weight: 900;
+}
+
+.predict-line,
+.stat-line {
+font-size: 10.5px;
+line-height: 1.25;
+color: #dde5f1;
+margin: 2px 0;
+}
+
+.result-pill {
+display: inline-block;
+min-width: 56px;
+text-align: center;
+padding: 5px 8px;
+border-radius: 999px;
+font-size: 10.5px;
+font-weight: 900;
+margin-top: 5px;
+}
+
+.result-red { background: #e53935; }
+.result-blue { background: #1e88e5; }
+.result-none { background: #6b7280; }
+
+.actual-card {
+padding: 7px;
+}
+
+.actual-inline {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 6px;
+flex-wrap: nowrap;
+}
+
+.actual-text {
+font-size: 10.5px;
+font-weight: 800;
+color: #eef3fb;
+line-height: 1.25;
+flex: 1;
+min-width: 0;
+}
+
+.actual-btns {
+display: flex;
+gap: 5px;
+flex-shrink: 0;
+}
+
+.actual-btns .red-btn,
+.actual-btns .blue-btn {
+padding: 7px 9px;
+font-size: 11px;
+}
+
+/* 八組記憶表：2行4列，更小字版 */
+.memory-list {
+display: grid;
+grid-template-columns: repeat(4, minmax(0, 1fr));
+gap: 4px;
+}
+
+.memory-item {
+padding: 5px 4px;
+min-height: 34px;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 2px;
+overflow: hidden;
+}
+
+.memory-left {
+font-size: 9.5px;
+font-weight: 900;
+letter-spacing: 0;
+white-space: nowrap;
+flex-shrink: 1;
+min-width: 0;
+}
+
+.memory-arrow {
+font-size: 9px;
+color: #dbe4f2;
+font-weight: 900;
+flex-shrink: 0;
+}
+
+.memory-right {
+font-size: 9px;
+font-weight: 900;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+text-align: center;
+flex-shrink: 1;
+min-width: 0;
+}
+
+.m-red { color: #ff7f7f; }
+.m-blue { color: #76b9ff; }
+.m-na { color: #f5b942; }
+
+.history-list {
+display: flex;
+flex-direction: column;
+gap: 6px;
+}
+
+.history-item {
+padding: 7px;
+}
+
+.history-top {
+display: flex;
+justify-content: space-between;
+align-items: center;
+gap: 5px;
+margin-bottom: 5px;
+flex-wrap: nowrap;
+overflow: hidden;
+}
+
+.history-top-left {
+display: flex;
+align-items: center;
+gap: 5px;
+min-width: 0;
+flex-wrap: nowrap;
+overflow: hidden;
+}
+
+/* 歷史字體大一點，但不爆版 */
+.round-badge,
+.pattern-badge {
+font-size: 12px;
+font-weight: 900;
+white-space: nowrap;
+}
+
+.round-badge { color: #ffd166; }
+
+.pattern-badge {
+color: #ffffff;
+overflow: hidden;
+text-overflow: ellipsis;
+min-width: 0;
+}
+
+.actual-badge {
+font-size: 10.5px;
+font-weight: 900;
+white-space: nowrap;
+padding: 2px 7px;
+border-radius: 999px;
+flex-shrink: 0;
+}
+
+.actual-badge.red {
+background: rgba(229,57,53,.18);
+color: #ff9a96;
+border: 1px solid rgba(229,57,53,.45);
+}
+
+.actual-badge.blue {
+background: rgba(30,136,229,.18);
+color: #8ec8ff;
+border: 1px solid rgba(30,136,229,.45);
+}
+
+/* 一行兩卡極簡版 */
+.history-predict-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 5px;
+}
+
+.history-predict-box {
+padding: 6px 7px;
+min-height: 44px;
+display: flex;
+flex-direction: column;
+justify-content: center;
+overflow: hidden;
+}
+
+.hp-title {
+font-size: 11px;
+font-weight: 900;
+margin-bottom: 2px;
+color: #dce4ef;
+line-height: 1.15;
+}
+
+.hp-line {
+font-size: 11px;
+line-height: 1.18;
+color: #edf2fb;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+
+.ok { color: #22c55e; font-weight: 900; }
+.bad { color: #ef4444; font-weight: 900; }
+.na { color: #f59e0b; font-weight: 900; }
+
+.empty-box {
+background: #07101e;
+border: 1px solid #263453;
+border-radius: 12px;
+padding: 12px;
+font-size: 12px;
+color: #eef3fb;
+}
+
+@media (max-width: 420px) {
+.memory-list {
+grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.memory-left { font-size: 9px; }
+.memory-right { font-size: 8.5px; }
+.memory-item { padding: 5px 3px; }
+.round-badge, .pattern-badge { font-size: 11.5px; }
+.hp-title, .hp-line { font-size: 10.5px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="title">紅藍平衡紀錄</div>
+
+<div class="card">
+<div class="section-title">三個點點</div>
+<div class="dots">
+<div class="dot-box">
+<div class="dot-label">點1</div>
+<div id="dotView0" class="dot-view"></div>
+<div class="btn-row">
+<button class="red-btn" onclick="setDot(0,'R')">紅</button>
+<button class="blue-btn" onclick="setDot(0,'B')">藍</button>
+</div>
+</div>
+
+<div class="dot-box">
+<div class="dot-label">點2</div>
+<div id="dotView1" class="dot-view"></div>
+<div class="btn-row">
+<button class="red-btn" onclick="setDot(1,'R')">紅</button>
+<button class="blue-btn" onclick="setDot(1,'B')">藍</button>
+</div>
+</div>
+
+<div class="dot-box">
+<div class="dot-label">點3</div>
+<div id="dotView2" class="dot-view"></div>
+<div class="btn-row">
+<button class="red-btn" onclick="setDot(2,'R')">紅</button>
+<button class="blue-btn" onclick="setDot(2,'B')">藍</button>
+</div>
+</div>
+</div>
+
+<div class="mini-btns">
+<button class="gray-btn" onclick="clearCurrent()">清除本次三點</button>
+</div>
+</div>
+
+<div class="card">
+<div class="section-title">本次預測</div>
+<div class="predict-grid">
+<div class="predict-box">
+<h3>紀錄1：紅藍平衡</h3>
+<div class="predict-line">紅多→打紅</div>
+<div class="predict-line">藍多→打藍</div>
+<div class="predict-line">目前三點：<span id="patternText1">-</span></div>
+<div id="pred1" class="result-pill result-none">未完成</div>
+</div>
+
+<div class="predict-box">
+<h3>紀錄2：同組合記憶</h3>
+<div class="predict-line">同組合遇過</div>
+<div class="predict-line">顯示上次後面開什麼</div>
+<div class="predict-line">目前三點：<span id="patternText2">-</span></div>
+<div id="pred2" class="result-pill result-none">尚無紀錄</div>
+</div>
+</div>
+</div>
+
+<div class="card actual-card">
+<div class="section-title">本次實際結果</div>
+<div class="actual-inline">
+<div class="actual-text">三點完成後，按下下把實際開出的顏色</div>
+<div class="actual-btns">
+<button class="red-btn" onclick="recordActual('R')">實際紅</button>
+<button class="blue-btn" onclick="recordActual('B')">實際藍</button>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="section-title">統計</div>
+<div class="stats-grid">
+<div class="stat-box">
+<h3>紀錄1：紅藍平衡</h3>
+<div class="stat-line">總次數：<span id="stat1Total">0</span></div>
+<div class="stat-line">命中：<span id="stat1Hit">0</span></div>
+<div class="stat-line">失敗：<span id="stat1Miss">0</span></div>
+<div class="stat-line">命中率：<span id="stat1Rate">0%</span></div>
+</div>
+
+<div class="stat-box">
+<h3>紀錄2：同組合記憶</h3>
+<div class="stat-line">有預測次數：<span id="stat2Total">0</span></div>
+<div class="stat-line">命中：<span id="stat2Hit">0</span></div>
+<div class="stat-line">失敗：<span id="stat2Miss">0</span></div>
+<div class="stat-line">命中率：<span id="stat2Rate">0%</span></div>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="section-title">八種組合記憶表（上次此組合後面開什麼）</div>
+<div id="memoryGrid" class="memory-list"></div>
+</div>
+
+<div class="card">
+<div class="section-title">歷史紀錄（最新在上面）</div>
+<div class="mini-btns" style="margin-top:0; margin-bottom:7px;">
+<button class="orange-btn" onclick="clearHistory()">清空全部紀錄</button>
+</div>
+<div id="historyList" class="history-list"></div>
+</div>
+</div>
+
+<script>
+const STORAGE_KEY = "redBlueBalanceRecorder_v2";
+
+let state = {
+currentDots: [null, null, null],
+history: [],
+patternMemory: {
+RRR: null, RRB: null, RBR: null, RBB: null,
+BRR: null, BRB: null, BBR: null, BBB: null
+}
+};
+
+function saveState() {
+localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function loadState() {
+const saved = localStorage.getItem(STORAGE_KEY);
+if (saved) {
+try {
+const parsed = JSON.parse(saved);
+if (parsed && typeof parsed === "object") {
+state = parsed;
+}
+} catch (e) {}
+}
+}
+
+function colorText(v) {
+if (v === "R") return "紅";
+if (v === "B") return "藍";
+return "-";
+}
+
+function patternToText(pattern) {
+if (!pattern) return "-";
+return pattern.split("").map(colorText).join("");
+}
+
+function getCurrentPattern() {
+if (state.currentDots.some(v => !v)) return null;
+return state.currentDots.join("");
+}
+
+function getPred1(pattern) {
+if (!pattern) return null;
+const reds = [...pattern].filter(x => x === "R").length;
+const blues = [...pattern].filter(x => x === "B").length;
+if (reds > blues) return "R";
+if (blues > reds) return "B";
+return null;
+}
+
+function getPred2(pattern) {
+if (!pattern) return null;
+return state.patternMemory[pattern] || null;
+}
+
+function setDot(index, value) {
+state.currentDots[index] = value;
+saveState();
+render();
+}
+
+function clearCurrent() {
+state.currentDots = [null, null, null];
+saveState();
+render();
+}
+
+function recordActual(actual) {
+const pattern = getCurrentPattern();
+if (!pattern) {
+alert("請先完成三個點點。");
+return;
+}
+
+const pred1 = getPred1(pattern);
+const pred2 = getPred2(pattern);
+
+const row = {
+round: state.history.length + 1,
+pattern,
+pred1,
+pred2,
+actual,
+result1: pred1 === actual ? "hit" : "miss",
+result2: pred2 ? (pred2 === actual ? "hit" : "miss") : "na",
+time: Date.now()
+};
+
+state.history.unshift(row);
+state.patternMemory[pattern] = actual;
+state.currentDots = [null, null, null];
+
+saveState();
+render();
+}
+
+function clearHistory() {
+if (!confirm("確定要清空全部歷史與記憶嗎？")) return;
+state = {
+currentDots: [null, null, null],
+history: [],
+patternMemory: {
+RRR: null, RRB: null, RBR: null, RBB: null,
+BRR: null, BRB: null, BBR: null, BBB: null
+}
+};
+saveState();
+render();
+}
+
+function calcStats() {
+const stat1Total = state.history.length;
+const stat1Hit = state.history.filter(x => x.result1 === "hit").length;
+const stat1Miss = state.history.filter(x => x.result1 === "miss").length;
+const stat1Rate = stat1Total ? ((stat1Hit / stat1Total) * 100).toFixed(1) + "%" : "0%";
+
+const valid2 = state.history.filter(x => x.pred2);
+const stat2Total = valid2.length;
+const stat2Hit = valid2.filter(x => x.result2 === "hit").length;
+const stat2Miss = valid2.filter(x => x.result2 === "miss").length;
+const stat2Rate = stat2Total ? ((stat2Hit / stat2Total) * 100).toFixed(1) + "%" : "0%";
+
+return {
+stat1Total, stat1Hit, stat1Miss, stat1Rate,
+stat2Total, stat2Hit, stat2Miss, stat2Rate
+};
+}
+
+function resultText(type) {
+if (type === "hit") return '<span class="ok">準</span>';
+if (type === "miss") return '<span class="bad">失敗</span>';
+return '<span class="na">無紀錄</span>';
+}
+
+function renderDots() {
+state.currentDots.forEach((v, i) => {
+const el = document.getElementById("dotView" + i);
+el.className = "dot-view";
+if (v === "R") el.classList.add("red");
+if (v === "B") el.classList.add("blue");
+});
+}
+
+function renderPredictions() {
+const pattern = getCurrentPattern();
+document.getElementById("patternText1").textContent = patternToText(pattern);
+document.getElementById("patternText2").textContent = patternToText(pattern);
+
+const pred1 = getPred1(pattern);
+const pred2 = getPred2(pattern);
+
+const p1 = document.getElementById("pred1");
+const p2 = document.getElementById("pred2");
+
+p1.className = "result-pill";
+p2.className = "result-pill";
+
+if (!pattern) {
+p1.classList.add("result-none");
+p1.textContent = "未完成";
+} else if (pred1 === "R") {
+p1.classList.add("result-red");
+p1.textContent = "預測：紅";
+} else if (pred1 === "B") {
+p1.classList.add("result-blue");
+p1.textContent = "預測：藍";
+} else {
+p1.classList.add("result-none");
+p1.textContent = "無法判定";
+}
+
+if (!pattern) {
+p2.classList.add("result-none");
+p2.textContent = "尚無紀錄";
+} else if (pred2 === "R") {
+p2.classList.add("result-red");
+p2.textContent = "預測：紅";
+} else if (pred2 === "B") {
+p2.classList.add("result-blue");
+p2.textContent = "預測：藍";
+} else {
+p2.classList.add("result-none");
+p2.textContent = "尚無紀錄";
+}
+}
+
+function renderStats() {
+const s = calcStats();
+document.getElementById("stat1Total").textContent = s.stat1Total;
+document.getElementById("stat1Hit").textContent = s.stat1Hit;
+document.getElementById("stat1Miss").textContent = s.stat1Miss;
+document.getElementById("stat1Rate").textContent = s.stat1Rate;
+
+document.getElementById("stat2Total").textContent = s.stat2Total;
+document.getElementById("stat2Hit").textContent = s.stat2Hit;
+document.getElementById("stat2Miss").textContent = s.stat2Miss;
+document.getElementById("stat2Rate").textContent = s.stat2Rate;
+}
+
+function renderMemory() {
+const order = ["RRR","RRB","RBR","RBB","BRR","BRB","BBR","BBB"];
+const grid = document.getElementById("memoryGrid");
+grid.innerHTML = "";
+
+order.forEach(p => {
+const value = state.patternMemory[p];
+const div = document.createElement("div");
+div.className = "memory-item";
+
+let rightHtml = '<span class="memory-right m-na">無</span>';
+if (value === "R") rightHtml = '<span class="memory-right m-red">紅</span>';
+if (value === "B") rightHtml = '<span class="memory-right m-blue">藍</span>';
+
+div.innerHTML = `
+<div class="memory-left">${patternToText(p)}</div>
+<div class="memory-arrow">→</div>
+${rightHtml}
+`;
+grid.appendChild(div);
+});
+}
+
+function renderHistory() {
+const box = document.getElementById("historyList");
+box.innerHTML = "";
+
+if (state.history.length === 0) {
+box.innerHTML = '<div class="empty-box">目前還沒有紀錄</div>';
+return;
+}
+
+state.history.forEach((row, idx) => {
+const div = document.createElement("div");
+div.className = "history-item";
+
+const actualClass = row.actual === "R" ? "red" : "blue";
+const actualText = row.actual === "R" ? "實際紅" : "實際藍";
+
+div.innerHTML = `
+<div class="history-top">
+<div class="history-top-left">
+<div class="round-badge">第${state.history.length - idx}筆</div>
+<div class="actual-badge ${actualClass}">${actualText}</div>
+</div>
+<div class="pattern-badge">${patternToText(row.pattern)}</div>
+</div>
+
+<div class="history-predict-grid">
+<div class="history-predict-box">
+<div class="hp-title">紀錄1</div>
+<div class="hp-line">預：${colorText(row.pred1)} / ${resultText(row.result1)}</div>
+</div>
+
+<div class="history-predict-box">
+<div class="hp-title">紀錄2</div>
+<div class="hp-line">${row.pred2 ? `預：${colorText(row.pred2)} / ${resultText(row.result2)}` : '<span class="na">尚無紀錄</span>'}</div>
+</div>
+</div>
+`;
+box.appendChild(div);
+});
+}
+
+function render() {
+renderDots();
+renderPredictions();
+renderStats();
+renderMemory();
+renderHistory();
+}
+
+loadState();
+render();
+</script>
+</body>
+</html>
